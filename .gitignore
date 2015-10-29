@@ -12,3 +12,4 @@ logs/
 .lein-plugins/
 .lein-failures
 .nrepl-port
+.lein-env
