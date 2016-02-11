@@ -13,3 +13,5 @@ logs/
 .lein-failures
 .nrepl-port
 .lein-env
+.idea
+*.iml

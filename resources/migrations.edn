@@ -1,0 +1,18 @@
+{:database-change-log
+ [{:change-set
+   {:id "1"
+    :author "patrick"
+    :changes [{:create-table {:table-name "users"
+                              :columns [{:column {:name "username"
+                                                  :type "varchar(1024)"
+                                                  :constraints {:primary-key? true :nullable? false}}}
+                                        {:column {:name "name"
+                                                  :type "varchar(1024)"}}
+                                        {:column {:name "password"
+                                                  :type "varchar(1024)"}}
+                                        {:column {:name "email"
+                                                  :type "varchar(1024)"
+                                                  :constraints {:nullable? false}}}
+                                        {:column {:name "updated"
+                                                  :type "datetime"
+                                                  :constraints {:nullable? false}}}]}}]}}]}
