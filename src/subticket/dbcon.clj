@@ -1,22 +1,9 @@
 (ns subticket.dbcon
-  (:require [environ.core :refer [env]])
-  (:import (com.mchange.v2.c3p0 ComboPooledDataSource)))
+  (:require [environ.core :refer [env]]
+            [korma.db :refer [defdb get-connection]]))
 
-(defn pool
-  [spec]
-  (let [cpds (doto (ComboPooledDataSource.)
-               (.setDriverClass (:classname spec))
-               (.setJdbcUrl (str "jdbc:" (:subprotocol spec) ":" (:subname spec)))
-               (.setUser (:user spec))
-               (.setPassword (:password spec))
-               ;; expire excess connections after 30 minutes of inactivity:
-               (.setMaxIdleTimeExcessConnections (* 30 60))
-               ;; expire connections after 3 hours of inactivity:
-               (.setMaxIdleTime (* 3 60 60)))]
-    {:datasource cpds}))
+(defdb thedb (assoc env :user (:db-user env) :password (:db-password env) :make-pool? true))
 
-(def pooled-db (delay (pool env)))
-
-(defn db-connection [] @pooled-db)
+(defn db-connection [] (get-connection thedb))
 
 

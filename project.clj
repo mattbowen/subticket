@@ -19,7 +19,8 @@
                  [environ "1.0.1"]
                  [com.mchange/c3p0 "0.9.2.1"] ; connection pooling
                  [clj-liquibase "0.6.0"]  ; migrations!
-                 [org.postgresql/postgresql "9.4-1201-jdbc41"]]
+                 [org.postgresql/postgresql "9.4-1201-jdbc41"]
+                 [korma "0.4.2"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :plugins [[lein-environ "1.0.1"]]

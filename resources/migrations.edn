@@ -2,7 +2,7 @@
  [{:change-set
    {:id "1"
     :author "patrick"
-    :changes [{:create-table {:table-name "users"
+    :changes [{:create-table {:table-name "users" :schema-name "subticket"
                               :columns [{:column {:name "username"
                                                   :type "varchar(1024)"
                                                   :constraints {:primary-key? true :nullable? false}}}

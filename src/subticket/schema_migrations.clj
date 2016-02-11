@@ -1,7 +1,7 @@
 (ns subticket.schema-migrations
   (:require [subticket.dbcon :refer [db-connection]]
-            [clj-liquibase.cli    :refer [update]])
-  (:use [clj-liquibase.core :refer (defparser)]))
+            [clj-liquibase.cli    :refer [update]]
+            [clj-liquibase.core :refer [defparser]]))
 
 (defparser changelog "migrations.edn")
 
