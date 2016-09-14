@@ -15,3 +15,5 @@ logs/
 .lein-env
 .idea
 *.iml
+*.log
+profiles.clj
