@@ -21,7 +21,8 @@
                  ;;[com.mchange/c3p0 "0.9.5.2"] ; connection pooling
                  [clj-liquibase "0.6.0"]  ; migrations!
                  [org.postgresql/postgresql "9.4.1210"]
-                 [korma "0.4.3"]]
+                 [korma "0.4.3"]
+                 [clojure.java-time "0.2.2"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :plugins [[lein-environ "1.1.0"]]
