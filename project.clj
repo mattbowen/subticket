@@ -27,7 +27,7 @@
   :resource-paths ["config", "resources"]
   :plugins [[lein-environ "1.1.0"]]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "subticket.server/run-dev"]}
-                   :dependencies [[io.pedestal/pedestal.service-tools "0.4.0"]]}
+                   :dependencies [[io.pedestal/pedestal.service-tools "0.5.1"]]}
              :uberjar {:aot [subticket.server]}}
   :main ^{:skip-aot true} subticket.server)
 
