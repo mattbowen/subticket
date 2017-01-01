@@ -17,3 +17,4 @@ logs/
 *.iml
 *.log
 profiles.clj
+*.DS_Store
