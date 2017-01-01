@@ -5,4 +5,5 @@
 
 (korma/defentity users
   (korma/pk :username)
-  (database thedb))
+  (korma/database thedb)
+  (korma/entity-fields :name :email))
