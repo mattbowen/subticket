@@ -2,7 +2,8 @@
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
-            [ring.util.response :as ring-resp]))
+            [ring.util.response :as ring-resp]
+            [subticket.users :as users]))
 
 (defn about-page
   [request]
@@ -14,14 +15,48 @@
   [request]
   (ring-resp/response "Hello World!"))
 
+(defn response [status body & {:as headers}]
+  {:status status :body body :headers headers})
+
+(def ok       (partial response 200))
+
+(def echo
+  {:name :echo
+   :enter
+   (fn [context]
+     (let [request (:request context)
+           response (ok context)]
+       (assoc context :response response)))})
+
+(def param-keys [:edn-params :form-params :json-params :path-params :query-params])
+
+(defn- get-params [request] (apply merge (vals (select-keys request param-keys))))
+
+(def default-json
+  {:name :default-json
+   :enter
+   (fn [context]
+     (let [request (:request context)
+           params (get-params request)]
+       (assoc context ::tmp-request request :request params)))
+   :leave
+   (fn [context]
+     (let [request (::tmp-request context)
+           body (:response context)]
+       (assoc context :request request :response (ok body))))})
+
+
+
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
 (def common-interceptors [(body-params/body-params) http/html-body])
+(def json-interceptors [(body-params/body-params) http/json-body default-json])
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
-              ["/about" :get (conj common-interceptors `about-page)]})
+              ["/about" :get (conj common-interceptors `about-page)]
+              ["/user/:user-id" :put (conj json-interceptors `users/add-user-handler)]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]

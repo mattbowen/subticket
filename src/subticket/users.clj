@@ -1,12 +1,15 @@
 (ns subticket.users
-  (:requre
+  (:require
    [korma.core :as korma]
    [subticket.entities :refer [users]]
    [java-time :refer [instant]]))
 
-(defn add-user
+(defn- add-user
   [user]
   (korma/insert
    users
-   (values (assoc (select-keys user [:username :name :password :email]) :updated (instant) ))))
+   (korma/values (assoc (select-keys user [:username :name :password :email]) :updated (instant) ))))
+
+(defn add-user-handler
+  [request] request)
 
