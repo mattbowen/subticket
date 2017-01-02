@@ -3,7 +3,8 @@
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
             [ring.util.response :as ring-resp]
-            [subticket.users :as users]))
+            [subticket.users :as users]
+            [korma.db]))
 
 (defn about-page
   [request]
@@ -51,12 +52,12 @@
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
 (def common-interceptors [(body-params/body-params) http/html-body])
-(def json-interceptors [(body-params/body-params) http/json-body default-json])
+(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (fn [request] (korma.db/transaction (handler request)))])
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/about" :get (conj common-interceptors `about-page)]
-              ["/user/:user-id" :put (conj json-interceptors `users/add-user-handler)]})
+              ["/user/:user-id" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
