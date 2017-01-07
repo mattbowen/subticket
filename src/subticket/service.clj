@@ -57,7 +57,7 @@
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/about" :get (conj common-interceptors `about-page)]
-              ["/user/:user-id" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
+              ["/user/:username" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]

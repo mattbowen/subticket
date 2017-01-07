@@ -11,5 +11,5 @@
    (korma/values (assoc (select-keys user [:username :name :password :email]) :updated (instant) ))))
 
 (defn add-user-handler
-  [request] request)
+  [request] (add-user request))
 
