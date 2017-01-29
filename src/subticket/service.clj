@@ -10,70 +10,44 @@
             [subticket.data-model]
             [korma.db]))
 
-(defn about-page
-  [request]
-  (ring-resp/response (format "Clojure %s - served from %s"
-                              (clojure-version)
-                              (route/url-for ::about-page))))
-
-(defn home-page
-  [request]
-  (ring-resp/response "Hello World!"))
-
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 
-(def ok       (partial response 200))
-
-(def echo
-  {:name :echo
-   :enter
-   (fn [context]
-     (let [request (:request context)
-           response (ok context)]
-       (assoc context :response response)))})
+(def ok                (partial response 200))
+(def bad-request       (partial response 400))
 
 (def param-keys [:edn-params :form-params :json-params :path-params :query-params])
 
 (defn- get-params [request] (apply merge (vals (select-keys request param-keys))))
+
+(defn- spec-for [route] (keyword "subticket.data-model" (name route)))
 
 (def default-json
   {:name :default-json
    :enter
    (fn [context]
      (let [request (:request context)
-           params (get-params request)]
-       (assoc context ::tmp-request request :request params)))
+           params (get-params request)
+           route (get-in context [:route :route-name])
+           errors (s/explain-data (spec-for route) params)]
+     (log/info :msg errors)
+     (if errors
+       (chain/terminate (assoc context :response (bad-request errors)))
+       (assoc context ::tmp-request request :request params))))
    :leave
    (fn [context]
      (let [request (::tmp-request context)
            body (:response context)]
        (assoc context :request request :response (ok body))))})
 
-(def bad-request
-  {:name :bad-request
-   :enter
-   (fn [context]
-     (let [request (:request context)
-           route (get-in context [:route :route-name])
-           params (get-params request)
-           errors (s/explain-data (keyword "subticket.data-model" (name route)) params)]
-       (log/info :msg errors)
-       (if errors
-         (chain/terminate (assoc context :response (response 400 errors)))
-         context)))})
-
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
-(def common-interceptors [(body-params/body-params) http/html-body])
-(defn json-interceptors [handler] [(body-params/body-params) http/json-body bad-request default-json (fn [request] (korma.db/transaction (handler request)))])
+(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (fn [request] (korma.db/transaction (handler request)))])
 
 ;; Tabular routes
-(def routes #{["/" :get (conj common-interceptors `home-page)]
-              ["/about" :get (conj common-interceptors `about-page)]
-              ["/user/:username" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
+(def routes #{["/user/:username" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
