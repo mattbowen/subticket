@@ -2,8 +2,12 @@
   (:require [io.pedestal.http :as http]
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.interceptor.chain :as chain]
             [ring.util.response :as ring-resp]
             [subticket.users :as users]
+            [clojure.spec :as s]
+            [io.pedestal.log :as log]
+            [subticket.data-model]
             [korma.db]))
 
 (defn about-page
@@ -46,13 +50,25 @@
            body (:response context)]
        (assoc context :request request :response (ok body))))})
 
+(def bad-request
+  {:name :bad-request
+   :enter
+   (fn [context]
+     (let [request (:request context)
+           route (get-in context [:route :route-name])
+           params (get-params request)
+           errors (s/explain-data (keyword "subticket.data-model" (name route)) params)]
+       (log/info :msg errors)
+       (if errors
+         (chain/terminate (assoc context :response (response 400 errors)))
+         context)))})
 
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
 (def common-interceptors [(body-params/body-params) http/html-body])
-(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (fn [request] (korma.db/transaction (handler request)))])
+(defn json-interceptors [handler] [(body-params/body-params) http/json-body bad-request default-json (fn [request] (korma.db/transaction (handler request)))])
 
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
