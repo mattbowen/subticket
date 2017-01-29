@@ -13,4 +13,5 @@ psql "$DB" <<EOF
 create user "$USER" password '$PASS';
 create schema "$SCHEMA" authorization "$USER";
 grant all privileges on schema "$SCHEMA" to "$USER";
+alter user "$USER" set search_path to "$SCHEMA";
 EOF
