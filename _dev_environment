@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Adjust appropriately and copy to dev_environment
+# DB
+export SUBTICKET_DB_USER=dbuser
+export SUBTICKET_DB_PASS=5555
+export SUBTICKET_DB=subticket
+export SUBTICKET_DB_SCHEMA=subticket 
+export SUBTICKET_DB_HOSTNAME=localhost 
+export SUBTICKET_DB_PORT=15422
+export SUBTICKET_DB_CONNECTIONS=2
+# Should be set if postgres is to be run locally and not as a service
+export SUBTICKET_DB_DIR=../.subticket_data

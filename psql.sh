@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+psql -h "$SUBTICKET_DB_HOSTNAME" -p "$SUBTICKET_DB_PORT" -U "$SUBTICKET_DB_USER" "$SUBTICKET_DB"
+
