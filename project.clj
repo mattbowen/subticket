@@ -19,13 +19,20 @@
                  [org.slf4j/log4j-over-slf4j "1.7.21"]
                  [environ "1.1.0"]
                  ;;[com.mchange/c3p0 "0.9.5.2"] ; connection pooling
-                 [clj-liquibase "0.6.0"]  ; migrations!
+                 [migratus "0.9.0"]  ;; migrations!
                  [org.postgresql/postgresql "9.4.1210"]
                  [korma "0.4.3"]
                  [clojure.java-time "0.2.2"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
-  :plugins [[lein-environ "1.1.0"]]
+  :plugins [[lein-environ "1.1.0"] [migratus-lein "0.4.4"]]
+  :migratus {:store :database
+             :migration-dir "migrations"
+             :db {:classname "org.postgresql.Driver"
+                  :subprotocol "postgresql"
+                  :subname ~(str "//" (get (System/getenv) "SUBTICKET_DB_HOSTNAME") ":" ( get (System/getenv) "SUBTICKET_DB_PORT") "/" (get (System/getenv) "SUBTICKET_DB"))
+                  :user ~(get (System/getenv) "SUBTICKET_DB_USER")
+                  :password ~(get (System/getenv) "SUBTICKET_DB_PASS")}}
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "subticket.server/run-dev"]}
                    :dependencies [[io.pedestal/pedestal.service-tools "0.5.1"]]}
              :uberjar {:aot [subticket.server]}}

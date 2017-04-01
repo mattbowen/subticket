@@ -28,4 +28,5 @@ if [ "$SUBTICKET_DB_HOSTNAME" = "localhost" -a -n $SUBTICKET_DB_DIR ]; then
 else
 	echo "Assuming Postgres is setup correctly on Host: $SUBTICKET_DB_HOSTNAME Port: $SUBTICKET_DB_PORT"
 fi
+lein migratus migrate
 lein run

@@ -19,3 +19,4 @@ logs/
 profiles.clj
 *.DS_Store
 dev_environment
+*.#*
