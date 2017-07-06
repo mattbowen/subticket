@@ -8,7 +8,7 @@
             [clojure.spec :as s]
             [io.pedestal.log :as log]
             [subticket.data-model]
-            [korma.db]))
+            [subticket.dbcon]))
 
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
@@ -44,7 +44,7 @@
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
-(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (fn [request] (korma.db/transaction (handler request)))])
+(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (subticket.dbcon/in-transaction handler)])
 
 ;; Tabular routes
 (def routes #{["/user/:username" :put (json-interceptors users/add-user-handler) :route-name :add-user]})

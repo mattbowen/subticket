@@ -1,15 +1,11 @@
 (ns subticket.users
   (:require
-   [korma.core :as korma]
-   [subticket.entities :refer [users]]
-   [java-time :refer [instant]]))
+   [yesql.core :as yesql]
+   [subticket.dbcon]))
 
-(defn- add-user
-  [user]
-  (korma/insert
-   users
-   (korma/values (assoc (select-keys user [:username :name :password :email]) :updated (instant) ))))
+(yesql/defqueries "sql/users.sql" subticket.dbcon/db)
+
 
 (defn add-user-handler
-  [request] (add-user request))
+  [request] (add-user! request))
 

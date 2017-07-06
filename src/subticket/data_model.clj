@@ -7,4 +7,4 @@
 (s/def ::name string?)
 (s/def ::password string?)
 
-(s/def ::add-user (s/keys :req-un [::email ::username ::name ::password]))
+(s/def ::add-user (s/keys :req-un [::username ::password]))

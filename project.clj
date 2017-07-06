@@ -18,10 +18,11 @@
                  [org.slf4j/jcl-over-slf4j "1.7.21"]
                  [org.slf4j/log4j-over-slf4j "1.7.21"]
                  [environ "1.1.0"]
-                 ;;[com.mchange/c3p0 "0.9.5.2"] ; connection pooling
+                 [com.mchange/c3p0 "0.9.5.2"] ; connection pooling
                  [migratus "0.9.0"]  ;; migrations!
                  [org.postgresql/postgresql "9.4.1210"]
-                 [korma "0.4.3"]
+                 [yesql "0.5.3"]
+                 [org.clojure/java.jdbc "0.7.0-alpha3"]
                  [clojure.java-time "0.2.2"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
