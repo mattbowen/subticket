@@ -22,7 +22,8 @@
     (.setUser (:username spec))
     (.setPassword (:password spec))
     (.setMinPoolSize pool-size)
-    (.setMaxPoolSize pool-size)))
+    (.setMaxPoolSize pool-size)
+    (.setInitialPoolSize pool-size)))
 
 (def pooled-db (delay (pool db-spec)))
 
