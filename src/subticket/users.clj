@@ -5,7 +5,10 @@
 
 (yesql/defqueries "sql/users.sql" subticket.dbcon/db)
 
+(defn- add-pw-hash
+  [request]
+  (assoc request :pw_hash (:password request)))
 
 (defn add-user-handler
-  [request] (add-user! request))
+  [request] (add-user! (add-pw-hash request)))
 

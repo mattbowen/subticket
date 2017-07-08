@@ -1,20 +1,31 @@
 (ns subticket.service
-  (:require [io.pedestal.http :as http]
-            [io.pedestal.http.route :as route]
+  (:require [clojure.core.async :as a]
+            [clojure.spec :as s]
+            [io.pedestal
+             [http :as http]
+             [interceptor :refer [IntoInterceptor map->Interceptor]]
+             [log :as log]]
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.interceptor.chain :as chain]
-            [ring.util.response :as ring-resp]
-            [subticket.users :as users]
-            [clojure.spec :as s]
-            [io.pedestal.log :as log]
             [subticket.data-model]
-            [subticket.dbcon]))
+            [subticket dbcon 
+             [users :as users]]))
 
+(extend-type clojure.lang.Fn
+  IntoInterceptor
+  (-interceptor [t]
+    (map->Interceptor {:enter (fn [context]
+                            (let [include-fn (partial assoc context :response)
+                                  response (t (:request context))]
+                              (if (satisfies? clojure.core.async.impl.protocols/ReadPort response)
+                                (a/pipe response (a/chan 1 (map include-fn)))
+                                (assoc context :response response))))})))
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 
 (def ok                (partial response 200))
 (def bad-request       (partial response 400))
+(def server-error      (partial response 500 nil))
 
 (def param-keys [:edn-params :form-params :json-params :path-params :query-params])
 
@@ -37,8 +48,12 @@
    :leave
    (fn [context]
      (let [request (::tmp-request context)
-           body (:response context)]
-       (assoc context :request request :response (ok body))))})
+           body (:response context)
+           e (:exception body)]
+       (if e
+         (do (log/error :exception e)
+             (assoc context :request request :response (server-error)))
+         (assoc context :request request :response (ok body)))))})
 
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
