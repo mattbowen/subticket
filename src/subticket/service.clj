@@ -13,6 +13,13 @@
              [users :as users]])
   (:import java.lang.Exception))
 
+(defn- pipe [from to f]
+  (a/go
+    (let [v (a/<! from)]
+      (a/>! to (f v))
+      (a/close! to)))
+  to)
+
 (extend-type clojure.lang.Fn
   IntoInterceptor
   (-interceptor [t]
@@ -20,8 +27,8 @@
                             (let [include-fn (partial assoc context :response)
                                   response (t (:request context))]
                               (if (satisfies? clojure.core.async.impl.protocols/ReadPort response)
-                                (a/pipe response (a/chan 1 (map include-fn)))
-                                (assoc context :response response))))})))
+                                (pipe response (a/chan 1)  include-fn)
+                                (include-fn response))))})))
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 

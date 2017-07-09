@@ -93,11 +93,10 @@
                      (.setAutoCommit conn false)
                      (try
                        (let [ret (f req)]
+                         (.commit conn)
                          (when-not (nil? ret)
-                           (>!! c ret)
-                           (.commit conn)))
+                           (>!! c ret)))
                        (catch Exception e
-                         (log/error :exception e)
                          (.rollback conn)
                          (>!! c {:exception e}))
                        (finally
