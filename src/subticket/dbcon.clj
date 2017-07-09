@@ -29,8 +29,53 @@
 
 ;; this is an anti-pattern see https://stuartsierra.com/2013/03/29/perils-of-dynamic-scope
 (def ^:dynamic ^:private conn)
+(def ^:private tricky-db-spec
+  (reify
+    clojure.lang.ILookup
+    (valAt [this o that]
+      (if (= o :connection)
+        conn
+        that))
+    (valAt [this o]
+      (if (= o :connection)
+        conn
+        nil))
+     clojure.lang.IPersistentMap
+  (assoc [this _ _]
+    this)
+  (assocEx [this _ _]
+    this)
+  (without [this _]
+    this)
 
-(def db {:connection {:factory (fn [_] conn)}})
+  java.lang.Iterable
+  (iterator [this]
+    nil)
+
+  clojure.lang.Associative
+  (containsKey [_ k]
+    (= k :connection))
+  (entryAt [this o]
+    (if (= o :connection)
+      conn
+      nil))
+
+  clojure.lang.IPersistentCollection
+  (count [_]
+    1)
+  (cons [this _]
+    this)
+  (empty [_]
+    false)
+  (equiv [this o]
+    (= this 0))
+
+  clojure.lang.Seqable
+  (seq [_]
+    nil)
+  ))
+
+(def db {:connection tricky-db-spec})
 
 (defonce ^:private ^Executor db-executor
   (Executors/newFixedThreadPool pool-size))

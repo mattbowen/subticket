@@ -1,7 +1,8 @@
 (ns subticket.users
-  (:require
-   [yesql.core :as yesql]
-   [subticket.dbcon]))
+  (:require subticket.dbcon
+            [subticket.util :refer [client-error]]
+            [yesql.core :as yesql]
+            [io.pedestal.log :as log]))
 
 (yesql/defqueries "sql/users.sql" subticket.dbcon/db)
 
@@ -10,5 +11,8 @@
   (assoc request :pw_hash (:password request)))
 
 (defn add-user-handler
-  [request] (add-user! (add-pw-hash request)))
+  [request]
+  (when (= 0 (add-user! (add-pw-hash request)))
+    (client-error "User exists")))
+
 

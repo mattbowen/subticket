@@ -7,9 +7,11 @@
              [log :as log]]
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.interceptor.chain :as chain]
+            ;; [subticket.data-model]
             [subticket.data-model]
             [subticket dbcon 
-             [users :as users]]))
+             [users :as users]])
+  (:import java.lang.Exception))
 
 (extend-type clojure.lang.Fn
   IntoInterceptor
@@ -33,6 +35,17 @@
 
 (defn- spec-for [route] (keyword "subticket.data-model" (name route)))
 
+(defn- handle-errors
+  [e with-context]
+  (if (instance? Exception e)
+    (do (log/error :exception e)
+        (with-context (server-error)))
+    (if-let [body (:client-error e)]
+      (do (log/warn :msg body)
+          (with-context (bad-request body)))
+      (do (log/error :msg e)
+          (with-context (server-error))))))
+
 (def default-json
   {:name :default-json
    :enter
@@ -41,19 +54,18 @@
            params (get-params request)
            route (get-in context [:route :route-name])
            errors (s/explain-data (spec-for route) params)]
-     (log/info :msg errors)
      (if errors
        (chain/terminate (assoc context :response (bad-request errors)))
        (assoc context ::tmp-request request :request params))))
    :leave
    (fn [context]
      (let [request (::tmp-request context)
+           with-context (partial assoc context :request request :response)
            body (:response context)
            e (:exception body)]
        (if e
-         (do (log/error :exception e)
-             (assoc context :request request :response (server-error)))
-         (assoc context :request request :response (ok body)))))})
+         (handle-errors e with-context)
+         (with-context (ok body)))))})
 
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
