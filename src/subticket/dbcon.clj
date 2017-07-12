@@ -1,11 +1,11 @@
 (ns subticket.dbcon
   (:require [clojure.core.async :refer [>!! chan close!]]
-            [environ.core :refer [env]]
-            [io.pedestal.log :as log])
+            [environ.core :refer [env]])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource
            [java.lang Exception Integer]
            [java.util.concurrent Executor Executors]
-           javax.sql.DataSource))
+           javax.sql.DataSource
+           ))
 
 (def ^:private db-spec {:classname "org.postgresql.Driver"
                           :subprotocol "postgresql"
@@ -30,50 +30,44 @@
 ;; this is an anti-pattern see https://stuartsierra.com/2013/03/29/perils-of-dynamic-scope
 (def ^:dynamic ^:private conn)
 (def ^:private tricky-db-spec
-  (reify
-    clojure.lang.ILookup
-    (valAt [this o that]
-      (if (= o :connection)
-        conn
-        that))
-    (valAt [this o]
-      (if (= o :connection)
-        conn
-        nil))
+  (let [get-spec (fn [] {:connection conn})]
+    (reify
+     clojure.lang.ILookup
+     (valAt [_ a b]
+       (.valAt (get-spec) a b))
+     (valAt [_ a]
+       (.valAt (get-spec) a))
      clojure.lang.IPersistentMap
-  (assoc [this _ _]
-    this)
-  (assocEx [this _ _]
-    this)
-  (without [this _]
-    this)
+     (assoc [_ a b]
+       (.assoc (get-spec) a b))
+     (assocEx [_ a b]
+       (.assocEx (get-spec) a b))
+     (without [_ a]
+       (.without (get-spec) a))
 
-  java.lang.Iterable
-  (iterator [this]
-    nil)
+     java.lang.Iterable
+     (iterator [_]
+       (.iterator (get-spec)))
 
-  clojure.lang.Associative
-  (containsKey [_ k]
-    (= k :connection))
-  (entryAt [this o]
-    (if (= o :connection)
-      conn
-      nil))
+     clojure.lang.Associative
+     (containsKey [_ a]
+       (.containsKey (get-spec) a))
+     (entryAt [_ a]
+       (.entryAt (get-spec) a))
 
-  clojure.lang.IPersistentCollection
-  (count [_]
-    1)
-  (cons [this _]
-    this)
-  (empty [_]
-    false)
-  (equiv [this o]
-    (= this 0))
+     clojure.lang.IPersistentCollection
+     (count [_]
+       (.count (get-spec)))
+     (cons [_ a]
+       (.cons (get-spec) a))
+     (empty [_]
+       (.empty (get-spec)))
+     (equiv [_ a]
+       (.equiv (get-spec) a))
 
-  clojure.lang.Seqable
-  (seq [_]
-    nil)
-  ))
+     clojure.lang.Seqable
+     (seq [_]
+       (.seq (get-spec))))))
 
 (def db {:connection tricky-db-spec})
 
