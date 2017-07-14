@@ -1,17 +1,17 @@
-  (defproject subticket "0.0.1-SNAPSHOT"
+(defproject subticket "0.0.1-SNAPSHOT"
   :description "A radically simple ticketing system"
   :url "https://github.com/mattbowen/subticket"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-    :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
                  [io.pedestal/pedestal.service "0.5.1"]
                  [io.pedestal/pedestal.log "0.5.1"]
 
-                 ;; Remove this line and uncomment one of the next lines to
-                 ;; use Immutant or Tomcat instead of Jetty:
+                   ;; Remove this line and uncomment one of the next lines to
+                   ;; use Immutant or Tomcat instead of Jetty:
                  [io.pedestal/pedestal.jetty "0.5.1"]
-                 ;; [io.pedestal/pedestal.immutant "0.4.0"]
-                 ;; [io.pedestal/pedestal.tomcat "0.4.0"]
+                   ;; [io.pedestal/pedestal.immutant "0.4.0"]
+                   ;; [io.pedestal/pedestal.tomcat "0.4.0"]
 
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
                  [org.slf4j/jul-to-slf4j "1.7.21"]
@@ -20,10 +20,11 @@
                  [environ "1.1.0"]
                  [com.mchange/c3p0 "0.9.5.2"] ; connection pooling
                  [migratus "0.9.0"]  ;; migrations!
-                 [org.postgresql/postgresql "9.4.1210"]
+                 [org.postgresql/postgresql "42.1.1"]
                  [yesql "0.5.3"]
                  [org.clojure/java.jdbc "0.7.0-alpha3"]
-                 [clojure.java-time "0.2.2"]]
+                 [clojure.java-time "0.2.2"]
+                 [org.mindrot/jbcrypt "0.4"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :plugins [[lein-environ "1.1.0"] [migratus-lein "0.4.4"]]
@@ -31,7 +32,7 @@
              :migration-dir "migrations"
              :db {:classname "org.postgresql.Driver"
                   :subprotocol "postgresql"
-                  :subname ~(str "//" (get (System/getenv) "SUBTICKET_DB_HOSTNAME") ":" ( get (System/getenv) "SUBTICKET_DB_PORT") "/" (get (System/getenv) "SUBTICKET_DB"))
+                  :subname ~(str "//" (get (System/getenv) "SUBTICKET_DB_HOSTNAME") ":" (get (System/getenv) "SUBTICKET_DB_PORT") "/" (get (System/getenv) "SUBTICKET_DB"))
                   :user ~(get (System/getenv) "SUBTICKET_DB_USER")
                   :password ~(get (System/getenv) "SUBTICKET_DB_PASS")}}
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "subticket.server/run-dev"]}

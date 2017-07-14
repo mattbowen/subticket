@@ -1,14 +1,14 @@
 (ns subticket.users
-  (:require subticket.dbcon
-            [subticket.util :refer [client-error]]
-            [yesql.core :as yesql]
-            [io.pedestal.log :as log]))
+  (:require [subticket dbcon 
+             [util :refer [client-error]]]
+            [yesql.core :as yesql])
+  (:import org.mindrot.jbcrypt.BCrypt))
 
 (yesql/defqueries "sql/users.sql" subticket.dbcon/db)
 
 (defn- add-pw-hash
   [request]
-  (assoc request :pw_hash (:password request)))
+  (assoc request :pw_hash (BCrypt/hashpw (:password request) (BCrypt/gensalt))))
 
 (defn add-user-handler
   [request]
