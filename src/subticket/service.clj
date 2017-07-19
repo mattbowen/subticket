@@ -55,35 +55,60 @@
       (do (log/error :msg e)
           (with-context (server-error))))))
 
-(def default-json
-  {:name :default-json
+(def validate-request
+  {:name :validate-request
    :enter
    (fn [context]
      (let [request (:request context)
            params (get-params request)
            route (get-in context [:route :route-name])
-           errors (s/explain-data (spec-for route) params)]
-     (if errors
-       (chain/terminate (assoc context :response (bad-request errors)))
-       (assoc context ::tmp-request request :request params))))
+           spec (spec-for route)
+           errors (and (s/spec? spec) (s/explain-data spec params))]
+       (if errors
+         (chain/terminate (assoc context :response (bad-request errors)))
+         context)))})
+
+(def params-only
+  {:name :params-only
+   :enter
+   (fn [context]
+     (let [request (:request context)
+           params (get-params request)]
+       (assoc context ::tmp-request request :request params)))
+   :leave
+   (fn [context] (assoc context :request (::tmp-request context)))})
+
+(def handle-exceptions
+  {:name :handle-exceptions
    :leave
    (fn [context]
-     (let [request (::tmp-request context)
-           with-context (partial assoc context :request request :response)
-           body (:response context)
-           e (:exception body)]
-       (if e
-         (handle-errors e with-context)
-         (with-context (ok body)))))})
+     (if-let [e (get-in context [:response :exception])]
+       (handle-errors e (partial assoc context :response))
+       context))})
+
+(def body-response
+  {:name :body-response
+   :leave
+   (fn [context]
+     (let [response (:response context)]
+       (if (:status response)
+         context
+         (assoc context :response (ok response)))))})
 
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
-(defn json-interceptors [handler] [(body-params/body-params) http/json-body default-json (subticket.dbcon/in-transaction handler)])
+(defn unauthenticated-transaction [handler] [(body-params/body-params)
+                                             http/json-body
+                                             validate-request
+                                             body-response
+                                             handle-exceptions
+                                             params-only
+                                             (subticket.dbcon/in-transaction handler)])
 
 ;; Tabular routes
-(def routes #{["/user/:username" :put (json-interceptors users/add-user-handler) :route-name :add-user]})
+(def routes #{["/user/:username" :put (unauthenticated-transaction users/add-user-handler) :route-name :add-user]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
