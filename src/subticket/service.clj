@@ -1,17 +1,20 @@
 (ns subticket.service
   (:require [clojure.core.async :as a]
             [clojure.spec :as s]
+            [environ.core :refer [env]]
             [io.pedestal
              [http :as http]
              [interceptor :refer [IntoInterceptor map->Interceptor]]
              [log :as log]]
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.interceptor.chain :as chain]
-            ;; [subticket.data-model]
-            [subticket.data-model]
+            [ring.middleware.session.cookie :as cookie]
             [subticket dbcon 
              [users :as users]])
-  (:import java.lang.Exception))
+  (:import java.lang.Exception
+           javax.xml.bind.DatatypeConverter))
+
+(require 'subticket.data-model)
 
 (defn- pipe [from to f]
   (a/go
@@ -39,7 +42,6 @@
 (def param-keys [:edn-params :form-params :json-params :path-params :query-params])
 
 (defn- get-params [request] (apply merge (vals (select-keys request param-keys))))
-
 (defn- spec-for [route] (keyword "subticket.data-model" (name route)))
 
 (defn- handle-errors
@@ -94,7 +96,7 @@
 ;      ^:interceptors [(body-params/body-params) http/html-body]
 ;      ["/about" {:get about-page}]]]])
 
-
+(def ^:private key (DatatypeConverter/parseHexBinary (:subticket-secret-key env)))
 ;; Consumed by subticket.server/create-server
 ;; See http/default-interceptors for additional options you can configure
 (def service {:env :prod
@@ -115,6 +117,8 @@
 
               ;; Root for resource interceptor that is available by default.
               ::http/resource-path "/public"
+              ;; session as encrypted cookie
+              ::http/enable-session {:store (cookie/cookie-store {:key key})}
 
               ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
               ::http/type :jetty

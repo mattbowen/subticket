@@ -11,3 +11,4 @@ export SUBTICKET_DB_PORT=15422
 export SUBTICKET_DB_CONNECTIONS=2
 # Should be set if postgres is to be run locally and not as a service
 export SUBTICKET_DB_DIR=../.subticket_data
+export SUBTICKET_SECRET_KEY="1B7AEFB937DB2614D18AAC9742213B08"
