@@ -2,15 +2,16 @@
   (:require [clojure.core.async :as a]
             [clojure.spec :as s]
             [environ.core :refer [env]]
-            [io.pedestal
-             [http :as http]
-             [interceptor :refer [IntoInterceptor map->Interceptor]]
-             [log :as log]]
+            [io.pedestal.http :as http]
             [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.interceptor :refer [IntoInterceptor map->Interceptor]]
             [io.pedestal.interceptor.chain :as chain]
+            [io.pedestal.log :as log]
             [ring.middleware.session.cookie :as cookie]
-            [subticket dbcon 
-             [users :as users]])
+            subticket.dbcon
+            java-time.core
+            java-time.temporal
+            [subticket.users :as users])
   (:import java.lang.Exception
            javax.xml.bind.DatatypeConverter))
 
@@ -37,9 +38,10 @@
 
 (def ok                (partial response 200))
 (def bad-request       (partial response 400))
-(def server-error      (partial response 500 nil))
+(def server-error      (response 500 nil))
+(def unauthenticated   (response 403 nil))
 
-(def param-keys [:edn-params :form-params :json-params :path-params :query-params])
+(def param-keys [:edn-params :form-params :json-params :path-params :query-params ::params])
 
 (defn- get-params [request] (apply merge (vals (select-keys request param-keys))))
 (defn- spec-for [route] (keyword "subticket.data-model" (name route)))
@@ -48,12 +50,12 @@
   [e with-context]
   (if (instance? Exception e)
     (do (log/error :exception e)
-        (with-context (server-error)))
+        (with-context server-error))
     (if-let [body (:client-error e)]
       (do (log/warn :msg body)
           (with-context (bad-request body)))
       (do (log/error :msg e)
-          (with-context (server-error))))))
+          (with-context server-error)))))
 
 (def validate-request
   {:name :validate-request
@@ -94,6 +96,20 @@
        (if (:status response)
          context
          (assoc context :response (ok response)))))})
+
+(defn- valid-session?
+  [usernames expiration]
+  (and (not (empty? usernames)) (java-time.core/before? expiration (java-time.temporal/instant))))
+
+(def authenticated
+  {:name :authenticated
+   :enter
+   (fn [context]
+     (let [usernames (get-in context [:request :session :usernames])
+           expiration (get-in context [:request :session :expiration])]
+       (if (valid-session? usernames expiration)
+         (assoc-in context [:request ::params] usernames)
+         unauthenticated)))})
 
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
