@@ -9,8 +9,7 @@
             [io.pedestal.log :as log]
             [ring.middleware.session.cookie :as cookie]
             subticket.dbcon
-            java-time.core
-            java-time.temporal
+            java-time
             [subticket.users :as users])
   (:import java.lang.Exception
            javax.xml.bind.DatatypeConverter))
@@ -28,11 +27,11 @@
   IntoInterceptor
   (-interceptor [t]
     (map->Interceptor {:enter (fn [context]
-                            (let [include-fn (partial assoc context :response)
-                                  response (t (:request context))]
-                              (if (satisfies? clojure.core.async.impl.protocols/ReadPort response)
-                                (pipe response (a/chan 1)  include-fn)
-                                (include-fn response))))})))
+                                (let [include-fn (partial assoc context :response)
+                                      response (t (:request context))]
+                                  (if (satisfies? clojure.core.async.impl.protocols/ReadPort response)
+                                    (pipe response (a/chan 1)  include-fn)
+                                    (include-fn response))))})))
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 
@@ -99,7 +98,15 @@
 
 (defn- valid-session?
   [usernames expiration]
-  (and (not (empty? usernames)) (java-time.core/before? expiration (java-time.temporal/instant))))
+  (and (not (empty? usernames)) (java-time/before? expiration (java-time/instant))))
+
+(defn- extend
+  [session]
+  (assoc session :expiration (java-time/plus (java-time/instant) (java-time/seconds (:subticket-session-length-in-seconds env)))))
+
+(defn- ok?
+  [context]
+  (= 200 (get-in context [:response :status])))
 
 (def authenticated
   {:name :authenticated
@@ -108,13 +115,41 @@
      (let [usernames (get-in context [:request :session :usernames])
            expiration (get-in context [:request :session :expiration])]
        (if (valid-session? usernames expiration)
-         (assoc-in context [:request ::params] usernames)
-         unauthenticated)))})
+         (assoc-in context [:request ::params ::usernames] usernames)
+         unauthenticated)))
+   :leave
+   (fn [context]
+     (if (ok? context)
+       (let [session (get-in context [:request :session])]
+         (assoc-in context [:response :session] (extend session)))
+       context))})
 
+(def add-user-to-session
+  {:name :add-user-to-session
+   :leave
+   (fn [context]
+     (if (ok? context)
+       (let [usernames (get-in context [:request :session :usernames])
+             new-user (get-in context [:response :body :username])]
+         (assoc-in context [:response :session] (extend (conj usernames new-user))))
+       context))})
 
-;; Defines "/" and "/about" routes with their associated :get handlers.
-;; The interceptors defined after the verb map (e.g., {:get home-page}
-;; apply to / and its children (/about).
+(defn logins [handler] [(body-params/body-params)
+                        http/json-body
+                        validate-request
+                        add-user-to-session
+                        body-response
+                        handle-exceptions
+                        params-only
+                        (subticket.dbcon/in-transaction handler)])
+(defn authenticated-transaction [handler] [(body-params/body-params)
+                                           http/json-body
+                                           validate-request
+                                           authenticated
+                                           body-response
+                                           handle-exceptions
+                                           params-only
+                                           (subticket.dbcon/in-transaction handler)])
 (defn unauthenticated-transaction [handler] [(body-params/body-params)
                                              http/json-body
                                              validate-request
