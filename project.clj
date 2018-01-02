@@ -14,21 +14,21 @@
                    ;; [io.pedestal/pedestal.tomcat "0.4.0"]
 
                  [ch.qos.logback/logback-classic "1.1.7" :exclusions [org.slf4j/slf4j-api]]
-                 [org.slf4j/jul-to-slf4j "1.7.21"]
-                 [org.slf4j/jcl-over-slf4j "1.7.21"]
-                 [org.slf4j/log4j-over-slf4j "1.7.21"]
+                 [org.slf4j/jul-to-slf4j "1.7.25"]
+                 [org.slf4j/jcl-over-slf4j "1.7.25"]
+                 [org.slf4j/log4j-over-slf4j "1.7.25"]
                  [environ "1.1.0"]
                  [com.mchange/c3p0 "0.9.5.2"] ; connection pooling
-                 [migratus "0.9.0"]  ;; migrations!
-                 [org.postgresql/postgresql "42.1.1"]
+                 [migratus "1.0.3"]  ;; migrations!
+                 [org.postgresql/postgresql "42.1.4"]
                  [yesql "0.5.3"]
-                 [org.clojure/java.jdbc "0.7.0-alpha3"]
-                 [clojure.java-time "0.3.0"]
+                 [org.clojure/java.jdbc "0.7.5"]
+                 [clojure.java-time "0.3.1"]
                  [ring/ring-core "1.6.3-SNAPSHOT"]
                  [org.mindrot/jbcrypt "0.4"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
-  :plugins [[lein-environ "1.1.0"] [migratus-lein "0.4.4"]]
+  :plugins [[lein-environ "1.1.0"] [migratus-lein "0.5.4"]]
   :migratus {:store :database
              :migration-dir "migrations"
              :db {:classname "org.postgresql.Driver"
