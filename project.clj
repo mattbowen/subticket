@@ -3,13 +3,13 @@
   :url "https://github.com/mattbowen/subticket"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
-                 [io.pedestal/pedestal.service "0.5.1"]
-                 [io.pedestal/pedestal.log "0.5.1"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [io.pedestal/pedestal.service "0.5.3"]
+                 [io.pedestal/pedestal.log "0.5.3"]
 
                    ;; Remove this line and uncomment one of the next lines to
                    ;; use Immutant or Tomcat instead of Jetty:
-                 [io.pedestal/pedestal.jetty "0.5.1"]
+                 [io.pedestal/pedestal.jetty "0.5.3"]
                    ;; [io.pedestal/pedestal.immutant "0.4.0"]
                    ;; [io.pedestal/pedestal.tomcat "0.4.0"]
 

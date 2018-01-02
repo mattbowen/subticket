@@ -1,6 +1,6 @@
 (ns subticket.service
   (:require [clojure.core.async :as a]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [environ.core :refer [env]]
             [io.pedestal.http :as http]
             [io.pedestal.http.body-params :as body-params]
