@@ -41,7 +41,6 @@
   [dt out]
   (.write out (str "#subticket/instant \"" (.toString dt) "\"")))
 
-(defn parse-instant [x] (java.time.Instant/parse x))
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 

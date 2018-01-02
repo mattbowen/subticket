@@ -1,1 +1,1 @@
-{subticket/instant subticket.service/parse-instant}
+{subticket/instant java-time/instant}
