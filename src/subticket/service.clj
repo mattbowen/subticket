@@ -70,7 +70,7 @@
   {:name :validate-request
    :enter
    (fn [context]
-     (log/info :msg context)
+     (log/trace :msg context)
      (let [request (:request context)
            params (get-params request)
            route (get-in context [:route :route-name])
@@ -113,7 +113,7 @@
 
 (defn- extend-session
   [session]
-  (log/info :msg session)
+  (log/trace :msg session)
   (assoc session :expiration (java-time/plus (java-time/instant) (java-time/seconds (Integer/parseInt (:subticket-session-length-in-seconds env))))))
 
 (defn- ok?

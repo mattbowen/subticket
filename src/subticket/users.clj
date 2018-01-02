@@ -18,7 +18,7 @@
 
 (defn login
   [{:keys [username password] :as request}]
-  (log/info :msg username)
+  (log/trace :msg username)
   (let [hash (:pw_hash (first (get-hash request)))]
     (if (BCrypt/checkpw password hash)
       {:username username}
