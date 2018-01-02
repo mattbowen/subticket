@@ -4,14 +4,15 @@
             [environ.core :refer [env]]
             [io.pedestal.http :as http]
             [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :refer [IntoInterceptor map->Interceptor]]
             [io.pedestal.interceptor.chain :as chain]
             [io.pedestal.log :as log]
+            java-time
             [ring.middleware.session.cookie :as cookie]
             subticket.dbcon
-            java-time
             [subticket.users :as users])
-  (:import java.lang.Exception
+  (:import [java.lang Exception Integer]
            javax.xml.bind.DatatypeConverter))
 
 (require 'subticket.data-model)
@@ -32,6 +33,15 @@
                                   (if (satisfies? clojure.core.async.impl.protocols/ReadPort response)
                                     (pipe response (a/chan 1)  include-fn)
                                     (include-fn response))))})))
+
+(defmethod print-method java.time.Instant
+  [dt out]
+  (.write out (str "#subticket/instant \"" (.toString dt) "\"")))
+(defmethod print-dup java.time.Instant
+  [dt out]
+  (.write out (str "#subticket/instant \"" (.toString dt) "\"")))
+
+(defn parse-instant [x] (java.time.Instant/parse x))
 (defn response [status body & {:as headers}]
   {:status status :body body :headers headers})
 
@@ -60,6 +70,7 @@
   {:name :validate-request
    :enter
    (fn [context]
+     (log/info :msg context)
      (let [request (:request context)
            params (get-params request)
            route (get-in context [:route :route-name])
@@ -102,7 +113,8 @@
 
 (defn- extend
   [session]
-  (assoc session :expiration (java-time/plus (java-time/instant) (java-time/seconds (:subticket-session-length-in-seconds env)))))
+  (log/info :msg session)
+  (assoc session :expiration (java-time/plus (java-time/instant) (java-time/seconds (Integer/parseInt (:subticket-session-length-in-seconds env))))))
 
 (defn- ok?
   [context]
@@ -120,7 +132,7 @@
    :leave
    (fn [context]
      (if (ok? context)
-       (let [session (get-in context [:request :session])]
+       (let [session (or (get-in context [:request :session]) {})]
          (assoc-in context [:response :session] (extend session)))
        context))})
 
@@ -131,7 +143,7 @@
      (if (ok? context)
        (let [usernames (get-in context [:request :session :usernames])
              new-user (get-in context [:response :body :username])]
-         (assoc-in context [:response :session] (extend (conj usernames new-user))))
+         (assoc-in context [:response :session] (extend {:usernames (conj usernames new-user)})))
        context))})
 
 (defn logins [handler] [(body-params/body-params)
@@ -159,7 +171,8 @@
                                              (subticket.dbcon/in-transaction handler)])
 
 ;; Tabular routes
-(def routes #{["/user/:username" :put (unauthenticated-transaction users/add-user-handler) :route-name :add-user]})
+(def routes #{["/user/:username" :put (unauthenticated-transaction users/add-user-handler) :route-name :add-user]
+              ["/login" :post (logins users/login) :route-name :login]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
@@ -194,7 +207,7 @@
               ;; Root for resource interceptor that is available by default.
               ::http/resource-path "/public"
               ;; session as encrypted cookie
-              ::http/enable-session {:store (cookie/cookie-store {:key key})}
+              ::http/enable-session {:store (cookie/cookie-store {:key key :readers clojure.core/*data-readers*})}
 
               ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
               ::http/type :jetty

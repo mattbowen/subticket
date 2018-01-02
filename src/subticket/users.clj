@@ -1,7 +1,8 @@
 (ns subticket.users
   (:require [subticket dbcon 
              [util :refer [client-error]]]
-            [yesql.core :as yesql])
+            [yesql.core :as yesql]
+            [io.pedestal.log :as log])
   (:import org.mindrot.jbcrypt.BCrypt))
 
 (yesql/defqueries "sql/users.sql" subticket.dbcon/db)
@@ -15,4 +16,10 @@
   (when (= 0 (add-user! (add-pw-hash request)))
     (client-error "User exists")))
 
-
+(defn login
+  [{:keys [username password] :as request}]
+  (log/info :msg username)
+  (let [hash (:pw_hash (first (get-hash request)))]
+    (if (BCrypt/checkpw password hash)
+      {:username username}
+      {:client-error "Bad Password"})))

@@ -8,3 +8,4 @@
 (s/def ::password string?)
 
 (s/def ::add-user (s/keys :req-un [::username ::password]))
+(s/def ::login ::add-user)

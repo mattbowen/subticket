@@ -24,6 +24,7 @@
                  [yesql "0.5.3"]
                  [org.clojure/java.jdbc "0.7.0-alpha3"]
                  [clojure.java-time "0.3.0"]
+                 [ring/ring-core "1.6.3-SNAPSHOT"]
                  [org.mindrot/jbcrypt "0.4"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
