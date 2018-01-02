@@ -111,7 +111,7 @@
   [usernames expiration]
   (and (not (empty? usernames)) (java-time/before? expiration (java-time/instant))))
 
-(defn- extend
+(defn- extend-session
   [session]
   (log/info :msg session)
   (assoc session :expiration (java-time/plus (java-time/instant) (java-time/seconds (Integer/parseInt (:subticket-session-length-in-seconds env))))))
@@ -133,7 +133,7 @@
    (fn [context]
      (if (ok? context)
        (let [session (or (get-in context [:request :session]) {})]
-         (assoc-in context [:response :session] (extend session)))
+         (assoc-in context [:response :session] (extend-session session)))
        context))})
 
 (def add-user-to-session
@@ -143,7 +143,7 @@
      (if (ok? context)
        (let [usernames (get-in context [:request :session :usernames])
              new-user (get-in context [:response :body :username])]
-         (assoc-in context [:response :session] (extend {:usernames (conj usernames new-user)})))
+         (assoc-in context [:response :session] (extend-session {:usernames (conj usernames new-user)})))
        context))})
 
 (defn logins [handler] [(body-params/body-params)
@@ -185,7 +185,7 @@
 ;      ^:interceptors [(body-params/body-params) http/html-body]
 ;      ["/about" {:get about-page}]]]])
 
-(def ^:private key (DatatypeConverter/parseHexBinary (:subticket-secret-key env)))
+(def ^:private session-key (DatatypeConverter/parseHexBinary (:subticket-secret-key env)))
 ;; Consumed by subticket.server/create-server
 ;; See http/default-interceptors for additional options you can configure
 (def service {:env :prod
@@ -207,7 +207,7 @@
               ;; Root for resource interceptor that is available by default.
               ::http/resource-path "/public"
               ;; session as encrypted cookie
-              ::http/enable-session {:store (cookie/cookie-store {:key key :readers clojure.core/*data-readers*})}
+              ::http/enable-session {:store (cookie/cookie-store {:key session-key :readers clojure.core/*data-readers*})}
 
               ;; Either :jetty, :immutant or :tomcat (see comments in project.clj)
               ::http/type :jetty
