@@ -22,3 +22,5 @@ dev_environment
 *.#*
 env
 .pytest_cache
+*.swp
+__pycache__/

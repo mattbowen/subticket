@@ -2,7 +2,8 @@ import requests
 import urllib.parse
 
 def q(path_segment):
-    return urllib.parse.quote(path_segment, safe='')
+    return urllib.parse.quote(path_segment, safe=":@-._~!$&'()*+,;=")
+
 
 class Subticket:
 
