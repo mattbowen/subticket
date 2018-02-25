@@ -11,7 +11,8 @@
             java-time
             [ring.middleware.session.cookie :as cookie]
             subticket.dbcon
-            [subticket.users :as users])
+            [subticket.users :as users]
+            [subticket.util :as u])
   (:import [java.lang Exception Integer]
            javax.xml.bind.DatatypeConverter))
 
@@ -52,7 +53,7 @@
 (def param-keys [:edn-params :form-params :json-params :path-params :query-params ::params])
 
 (defn- get-params [request] (apply merge (vals (select-keys request param-keys))))
-(defn- spec-for [route] (keyword "subticket.data-model" (name route)))
+(defn- spec-for [route] (s/get-spec (keyword "subticket.data-model" (name route))))
 
 (defn- handle-errors
   [e with-context]
@@ -60,7 +61,7 @@
     (do (log/error :exception e)
         (with-context server-error))
     (if-let [body (:client-error e)]
-      (do (log/warn :msg body)
+      (do (log/info :msg body)
           (with-context (bad-request body)))
       (do (log/error :msg e)
           (with-context server-error)))))
@@ -74,10 +75,16 @@
            params (get-params request)
            route (get-in context [:route :route-name])
            spec (spec-for route)
-           errors (and (s/spec? spec) (s/explain-data spec params))]
+           errors (and (s/spec? spec) (not (s/valid? spec params)) (s/explain-str spec params))]
        (if errors
          (chain/terminate (assoc context :response (bad-request errors)))
          context)))})
+
+(def decode-path-segment
+  {:name :decode-path-segment
+   :enter
+   (fn [context]
+     (update-in context [:request :path-params] (partial u/map-values route/decode-query-part)))})
 
 (def params-only
   {:name :params-only
@@ -147,6 +154,7 @@
 
 (defn logins [handler] [(body-params/body-params)
                         http/json-body
+                        decode-path-segment
                         validate-request
                         add-user-to-session
                         body-response
@@ -155,6 +163,7 @@
                         (subticket.dbcon/in-transaction handler)])
 (defn authenticated-transaction [handler] [(body-params/body-params)
                                            http/json-body
+                                           decode-path-segment
                                            validate-request
                                            authenticated
                                            body-response
@@ -163,6 +172,7 @@
                                            (subticket.dbcon/in-transaction handler)])
 (defn unauthenticated-transaction [handler] [(body-params/body-params)
                                              http/json-body
+                                             decode-path-segment
                                              validate-request
                                              body-response
                                              handle-exceptions

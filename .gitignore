@@ -20,3 +20,5 @@ profiles.clj
 *.DS_Store
 dev_environment
 *.#*
+env
+.pytest_cache
