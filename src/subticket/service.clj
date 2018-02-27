@@ -114,8 +114,8 @@
          (assoc context :response (ok response)))))})
 
 (defn- valid-session?
-  [usernames expiration]
-  (and (not (empty? usernames)) (java-time/before? expiration (java-time/instant))))
+  [username expiration]
+  (and (empty? username) (java-time/before? expiration (java-time/instant))))
 
 (defn- extend-session
   [session]
@@ -130,10 +130,10 @@
   {:name :authenticated
    :enter
    (fn [context]
-     (let [usernames (get-in context [:request :session :usernames])
+     (let [username (get-in context [:request :session :username])
            expiration (get-in context [:request :session :expiration])]
-       (if (valid-session? usernames expiration)
-         (assoc-in context [:request ::params ::usernames] usernames)
+       (if (valid-session? username expiration)
+         (assoc-in context [:request ::params ::username] username)
          unauthenticated)))
    :leave
    (fn [context]
@@ -147,9 +147,9 @@
    :leave
    (fn [context]
      (if (ok? context)
-       (let [usernames (get-in context [:request :session :usernames])
-             new-user (get-in context [:response :body :username])]
-         (assoc-in context [:response :session] (extend-session {:usernames (conj usernames new-user)})))
+       (let [username (get-in context [:request :session :username])
+             new-user (get-in context [:response :body :ussername])]
+         (assoc-in context [:response :session] (extend-session {:username new-user})))
        context))})
 
 (defn logins [handler] [(body-params/body-params)
