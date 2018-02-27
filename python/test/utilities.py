@@ -7,9 +7,12 @@ def random_string():
 def random_subticket():
     return Subticket(random_string(), random_string())
 
+def random_email():
+    return random_string() + '@subticket.com'
+
 def get_api():
     t = random_subticket()
-    t.create_user()
+    t.create_user(random_email())
     return t
 
 def ok(resp):

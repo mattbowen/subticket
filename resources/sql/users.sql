@@ -1,6 +1,6 @@
 -- name: add-user!
 -- Inserts a user.
-INSERT INTO users VALUES (:username, :pw_hash)
+INSERT INTO users VALUES (:username, :pw_hash, :email)
 ON CONFLICT DO NOTHING;
 
 -- name: get-hash

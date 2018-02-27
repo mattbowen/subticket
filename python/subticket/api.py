@@ -15,5 +15,5 @@ class Subticket:
 
     def login(self):
         return self.session.post(f"{self.host}/login", json={'username': self.username, 'password': self.password})
-    def create_user(self):
-        return self.session.put(f"{self.host}/user/{q(self.username)}", json={'password': self.password})
+    def create_user(self, email):
+        return self.session.put(f"{self.host}/user/{q(self.username)}", json={'password': self.password, 'email': email})
