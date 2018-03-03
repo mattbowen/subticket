@@ -1,10 +1,12 @@
 (ns subticket.dbcon
   (:require [clojure.core.async :refer [>!! chan close!]]
-            [environ.core :refer [env]])
+            [environ.core :refer [env]]
+            [subticket.util :refer [client-error]])
   (:import com.mchange.v2.c3p0.ComboPooledDataSource
            [java.lang Exception Integer]
            [java.util.concurrent Executor Executors]
            javax.sql.DataSource
+           com.subticket.ClientErrorException
            ))
 
 (def ^:private db-spec {:classname "org.postgresql.Driver"
@@ -90,6 +92,9 @@
                          (.commit conn)
                          (when-not (nil? ret)
                            (>!! c ret)))
+                       (catch ClientErrorException e
+                         (.rollback conn)
+                         (>!! c (client-error e)))
                        (catch Exception e
                          (.rollback conn)
                          (>!! c {:exception e}))

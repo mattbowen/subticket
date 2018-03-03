@@ -1,5 +1,5 @@
 (ns subticket.users
-  (:require [subticket dbcon 
+  (:require [subticket dbcon
              [util :refer [client-error]]]
             [yesql.core :as yesql]
             [io.pedestal.log :as log])
@@ -19,7 +19,8 @@
 (defn login
   [{:keys [username password] :as request}]
   (log/trace :msg username)
-  (let [hash (:pw_hash (first (get-hash request)))]
+  (if-let [hash (:pw_hash (first (get-hash request)))]
     (if (BCrypt/checkpw password hash)
       {:username username}
-      {:client-error "Bad Password"})))
+      (client-error "Bad Password"))
+    (client-error "User not found.")))

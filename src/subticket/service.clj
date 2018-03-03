@@ -7,6 +7,7 @@
             [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :refer [IntoInterceptor map->Interceptor]]
             [io.pedestal.interceptor.chain :as chain]
+            [io.pedestal.interceptor.error :as error-int]
             [io.pedestal.log :as log]
             java-time
             [ring.middleware.session.cookie :as cookie]
@@ -14,7 +15,8 @@
             [subticket.users :as users]
             [subticket.util :as u])
   (:import [java.lang Exception Integer]
-           javax.xml.bind.DatatypeConverter))
+           javax.xml.bind.DatatypeConverter
+           com.subticket.PercentDecoder))
 
 (require 'subticket.data-model)
 
@@ -61,10 +63,20 @@
     (do (log/error :exception e)
         (with-context server-error))
     (if-let [body (:client-error e)]
-      (do (log/info :msg body)
-          (with-context (bad-request body)))
+      (if (instance? Exception body)
+        (do (log/info :exception body)
+            (with-context (bad-request (.getMessage body))))
+        (do (log/info :msg body)
+           (with-context (bad-request body))))
       (do (log/error :msg e)
           (with-context server-error)))))
+
+(def client-error-exception-handler
+  (error-int/error-dispatch [ctx ex]
+    [{:exception-type :com.subticket.ClientErrorException}]
+    (assoc ctx :response (bad-request (.getMessage ex)))
+    :else
+    (assoc ctx :io.pedestal.interceptor.chain/error ex)))
 
 (def validate-request
   {:name :validate-request
@@ -84,7 +96,7 @@
   {:name :decode-path-segment
    :enter
    (fn [context]
-     (update-in context [:request :path-params] (partial u/map-values route/decode-query-part)))})
+     (update-in context [:request :path-params] (partial u/map-values #(PercentDecoder/decode %))))})
 
 (def params-only
   {:name :params-only
@@ -154,6 +166,7 @@
 
 (defn logins [handler] [(body-params/body-params)
                         http/json-body
+                        client-error-exception-handler
                         decode-path-segment
                         validate-request
                         add-user-to-session
@@ -163,6 +176,7 @@
                         (subticket.dbcon/in-transaction handler)])
 (defn authenticated-transaction [handler] [(body-params/body-params)
                                            http/json-body
+                                           client-error-exception-handler
                                            decode-path-segment
                                            validate-request
                                            authenticated
@@ -172,6 +186,7 @@
                                            (subticket.dbcon/in-transaction handler)])
 (defn unauthenticated-transaction [handler] [(body-params/body-params)
                                              http/json-body
+                                             client-error-exception-handler
                                              decode-path-segment
                                              validate-request
                                              body-response

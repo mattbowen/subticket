@@ -28,6 +28,7 @@
                  [org.mindrot/jbcrypt "0.4"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
+  :java-source-paths ["src/java" "test/java"]
   :plugins [[lein-environ "1.1.0"] [migratus-lein "0.5.4"]]
   :migratus {:store :database
              :migration-dir "migrations"
